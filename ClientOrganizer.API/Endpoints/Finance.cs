@@ -8,10 +8,11 @@ namespace ClientOrganizer.API.Endpoints
     {
         public static void RegisterFinanceEndpoints(this WebApplication app)
         {
-            // Get all financial records
-            app.MapGet("/finance", async (ClientOrganizerDbContext db) =>
+            // Get all financial records for a given client
+            app.MapGet("/clients/{clientId}/finance/all", async (int clientId, ClientOrganizerDbContext db) =>
             {
                 var records = await db.FinancialData
+                    .Where(f => f.ClientId == clientId)
                     .Select(f => new FinancialRecordDto
                     {
                         Id = f.Id,
@@ -24,9 +25,9 @@ namespace ClientOrganizer.API.Endpoints
                     })
                     .ToListAsync();
 
-                return Results.Ok(records);
+                return records.Count != 0 ? Results.Ok(records) : Results.NotFound();
             })
-            .WithName("GetFinanceRecords")
+            .WithName("GetAllFinanceRecordsForClient")
             .WithTags("Finance");
 
             // Get a specific financial record by its ID
@@ -76,6 +77,12 @@ namespace ClientOrganizer.API.Endpoints
             // Create a new financial record for a client
             app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordDto recordDto, ClientOrganizerDbContext db) =>
             {
+                var exists = await db.FinancialData
+                    .AnyAsync(f => f.ClientId == clientId && f.Month == recordDto.Month && f.Year == recordDto.Year);
+
+                if (exists)
+                    return Results.Conflict($"Financial record for client {clientId} in {recordDto.Month}/{recordDto.Year} already exists.");
+
                 var record = new FinancialData
                 {
                     ClientId = clientId,
@@ -97,22 +104,47 @@ namespace ClientOrganizer.API.Endpoints
             .WithTags("Finance");
 
             // Update a financial record for a client
-            app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordDto recordDto, ClientOrganizerDbContext db) =>
+            app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordUpdateDto updateDto, ClientOrganizerDbContext db) =>
             {
+                if (updateDto is null ||
+                    updateDto.IncomeTax is null &&
+                    updateDto.Vat is null &&
+                    updateDto.InsuranceAmount is null)
+                {
+                    return Results.BadRequest("At least one property must be provided for update.");
+                }
+
+                if (updateDto.Month is null || updateDto.Year is null)
+                    return Results.BadRequest("Month and Year are required to identify the record.");
+
                 var record = await db.FinancialData
-                    .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == recordDto.Month && f.Year == recordDto.Year);
+                    .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == updateDto.Month && f.Year == updateDto.Year);
 
                 if (record is null)
                     return Results.NotFound();
 
-                record.IncomeTax = recordDto.IncomeTax;
-                record.Vat = recordDto.Vat;
-                record.InsuranceAmount = recordDto.InsuranceAmount;
+                if (updateDto.IncomeTax is not null) record.IncomeTax = updateDto.IncomeTax.Value;
+                if (updateDto.Vat is not null) record.Vat = updateDto.Vat.Value;
+                if (updateDto.InsuranceAmount is not null) record.InsuranceAmount = updateDto.InsuranceAmount.Value;
 
                 await db.SaveChangesAsync();
                 return Results.NoContent();
             })
             .WithName("UpdateClientFinanceRecord")
+            .WithTags("Finance");
+
+            // Delete a financial record by its ID
+            app.MapDelete("/finance/{id}", async (int id, ClientOrganizerDbContext db) =>
+            {
+                var record = await db.FinancialData.FindAsync(id);
+                if (record is null)
+                    return Results.NotFound();
+
+                db.FinancialData.Remove(record);
+                await db.SaveChangesAsync();
+                return Results.NoContent();
+            })
+            .WithName("DeleteFinanceRecord")
             .WithTags("Finance");
         }
     }

@@ -22,7 +22,7 @@ namespace ClientOrganizer.API.Endpoints
                     })
                     .ToListAsync();
 
-                return Results.Ok(clients);
+                return clients.Count != 0 ? Results.Ok(clients) : Results.NotFound();
             })
             .WithName("GetClients")
             .WithTags("Clients");
@@ -50,6 +50,11 @@ namespace ClientOrganizer.API.Endpoints
             // Create client
             app.MapPost("/clients", async (ClientDto clientDto, ClientOrganizerDbContext db) =>
             {
+                // Check for existing client with the same NipNb (unique constraint)
+                var exists = await db.Clients.AnyAsync(c => c.NipNb == clientDto.NipNb);
+                if (exists)
+                    return Results.Conflict($"Client with NipNb '{clientDto.NipNb}' already exists.");
+
                 var client = new Client
                 {
                     Name = clientDto.Name,
@@ -68,16 +73,25 @@ namespace ClientOrganizer.API.Endpoints
             .WithTags("Clients");
 
             // Update client
-            app.MapPut("/clients/{id}", async (int id, ClientDto clientDto, ClientOrganizerDbContext db) =>
+            app.MapPut("/clients/{id}", async (int id, ClientUpdateDto updateDto, ClientOrganizerDbContext db) =>
             {
+                if (updateDto is null ||
+                    updateDto.Name is null &&
+                    updateDto.Address is null &&
+                    updateDto.NipNb is null &&
+                    updateDto.Email is null)
+                {
+                    return Results.BadRequest("At least one property must be provided for update.");
+                }
+
                 var client = await db.Clients.FindAsync(id);
                 if (client is null)
                     return Results.NotFound();
 
-                client.Name = clientDto.Name;
-                client.Address = clientDto.Address;
-                client.NipNb = clientDto.NipNb;
-                client.Email = clientDto.Email;
+                if (updateDto.Name is not null) client.Name = updateDto.Name;
+                if (updateDto.Address is not null) client.Address = updateDto.Address;
+                if (updateDto.NipNb is not null) client.NipNb = updateDto.NipNb;
+                if (updateDto.Email is not null) client.Email = updateDto.Email;
 
                 await db.SaveChangesAsync();
                 return Results.NoContent();
