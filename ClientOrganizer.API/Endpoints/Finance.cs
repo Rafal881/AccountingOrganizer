@@ -1,5 +1,6 @@
 ﻿using ClientOrganizer.API.Data;
-using ClientOrganizer.API.Models;
+using ClientOrganizer.API.Models.Dtos;
+using ClientOrganizer.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClientOrganizer.API.Endpoints

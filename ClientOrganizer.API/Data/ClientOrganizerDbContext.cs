@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ClientOrganizer.API.Models;
+using ClientOrganizer.API.Models.Entities;
 
 namespace ClientOrganizer.API.Data
 {

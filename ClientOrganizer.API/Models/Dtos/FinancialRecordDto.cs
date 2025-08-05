@@ -1,4 +1,4 @@
-namespace ClientOrganizer.API.Models
+namespace ClientOrganizer.API.Models.Dtos
 {
     public class FinancialRecordDto
     {
