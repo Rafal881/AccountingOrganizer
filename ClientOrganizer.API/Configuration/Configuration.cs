@@ -8,7 +8,6 @@
                    .AddEndpointsApiExplorer()
                    .AddSwaggerGen();
         }
-
         public static void RegisterMiddlewares(this WebApplication app)
         {
             if (app.Environment.IsDevelopment())
