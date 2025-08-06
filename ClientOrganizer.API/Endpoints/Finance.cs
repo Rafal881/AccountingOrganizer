@@ -84,6 +84,10 @@ namespace ClientOrganizer.API.Endpoints
 
                 if (exists)
                     return Results.Conflict($"Financial record for client {clientId} in {recordDto.Month}/{recordDto.Year} already exists.");
+                
+                var client = await db.Clients.FindAsync(clientId);
+                if (client is null)
+                    return Results.NotFound($"Client with id {clientId} not found.");
 
                 var record = new FinancialData
                 {
@@ -100,8 +104,9 @@ namespace ClientOrganizer.API.Endpoints
 
                 recordDto.Id = record.Id;
                 recordDto.ClientId = clientId;
+                
 
-                await messageService.SendFinancialRecordCreatedAsync(recordDto);
+                await messageService.SendFinancialRecordCreatedAsync(recordDto, client.Email);
 
                 return Results.Created($"/finance/{record.Id}", recordDto);
             })
@@ -128,6 +133,10 @@ namespace ClientOrganizer.API.Endpoints
                 if (record is null)
                     return Results.NotFound();
 
+                var client = await db.Clients.FindAsync(clientId);
+                if (client is null)
+                    return Results.NotFound($"Client with id {clientId} not found.");
+
                 if (updateDto.IncomeTax is not null) record.IncomeTax = updateDto.IncomeTax.Value;
                 if (updateDto.Vat is not null) record.Vat = updateDto.Vat.Value;
                 if (updateDto.InsuranceAmount is not null) record.InsuranceAmount = updateDto.InsuranceAmount.Value;
@@ -144,7 +153,7 @@ namespace ClientOrganizer.API.Endpoints
                     Vat = record.Vat,
                     InsuranceAmount = record.InsuranceAmount
                 };
-                await messageService.SendFinancialRecordUpdatedAsync(updatedRecordDto);
+                await messageService.SendFinancialRecordUpdatedAsync(updatedRecordDto, client.Email);
 
                 return Results.NoContent();
             })

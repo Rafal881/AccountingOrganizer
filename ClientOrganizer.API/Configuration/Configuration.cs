@@ -7,6 +7,8 @@
             builder.Services
                    .AddEndpointsApiExplorer()
                    .AddSwaggerGen();
+
+            builder.Services.AddScoped<FinanceMessageService>();
         }
         public static void RegisterMiddlewares(this WebApplication app)
         {

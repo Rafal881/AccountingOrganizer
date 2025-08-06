@@ -10,23 +10,44 @@ public class FinanceMessageService
         _sender = sender;
     }
 
-    public async Task SendFinancialRecordCreatedAsync(FinancialRecordDto dto)
+    public async Task SendFinancialRecordCreatedAsync(FinancialRecordDto dto, string email)
     {
+
         var messageBody = System.Text.Json.JsonSerializer.Serialize(new
         {
             Event = "NewFinancialRecordCreated",
-            Record = dto
+            Record = new
+            {
+                dto.Id,
+                dto.ClientId,
+                dto.Month,
+                dto.Year,
+                dto.IncomeTax,
+                dto.Vat,
+                dto.InsuranceAmount,
+                Email = email
+            }
         });
         var message = new ServiceBusMessage(messageBody);
         await _sender.SendMessageAsync(message);
     }
 
-    public async Task SendFinancialRecordUpdatedAsync(FinancialRecordDto dto)
+    public async Task SendFinancialRecordUpdatedAsync(FinancialRecordDto dto, string email)
     {
         var messageBody = System.Text.Json.JsonSerializer.Serialize(new
         {
             Event = "FinancialRecordUpdated",
-            Record = dto
+            Record = new
+            {
+                dto.Id,
+                dto.ClientId,
+                dto.Month,
+                dto.Year,
+                dto.IncomeTax,
+                dto.Vat,
+                dto.InsuranceAmount,
+                Email = email
+            }
         });
         var message = new ServiceBusMessage(messageBody);
         await _sender.SendMessageAsync(message);
