@@ -1,4 +1,5 @@
-﻿using ClientOrganizer.API.Data;
+﻿using Azure.Messaging.ServiceBus;
+using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -76,7 +77,7 @@ namespace ClientOrganizer.API.Endpoints
             .WithTags("Finance");
 
             // Create a new financial record for a client
-            app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordDto recordDto, ClientOrganizerDbContext db) =>
+            app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordDto recordDto, ClientOrganizerDbContext db, FinanceMessageService messageService) =>
             {
                 var exists = await db.FinancialData
                     .AnyAsync(f => f.ClientId == clientId && f.Month == recordDto.Month && f.Year == recordDto.Year);
@@ -99,13 +100,16 @@ namespace ClientOrganizer.API.Endpoints
 
                 recordDto.Id = record.Id;
                 recordDto.ClientId = clientId;
+
+                await messageService.SendFinancialRecordCreatedAsync(recordDto);
+
                 return Results.Created($"/finance/{record.Id}", recordDto);
             })
             .WithName("CreateClientFinanceRecord")
             .WithTags("Finance");
 
             // Update a financial record for a client
-            app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordUpdateDto updateDto, ClientOrganizerDbContext db) =>
+            app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordUpdateDto updateDto, ClientOrganizerDbContext db, FinanceMessageService messageService) =>
             {
                 if (updateDto is null ||
                     updateDto.IncomeTax is null &&
@@ -129,6 +133,19 @@ namespace ClientOrganizer.API.Endpoints
                 if (updateDto.InsuranceAmount is not null) record.InsuranceAmount = updateDto.InsuranceAmount.Value;
 
                 await db.SaveChangesAsync();
+
+                var updatedRecordDto = new FinancialRecordDto
+                {
+                    Id = record.Id,
+                    ClientId = record.ClientId,
+                    Month = record.Month,
+                    Year = record.Year,
+                    IncomeTax = record.IncomeTax,
+                    Vat = record.Vat,
+                    InsuranceAmount = record.InsuranceAmount
+                };
+                await messageService.SendFinancialRecordUpdatedAsync(updatedRecordDto);
+
                 return Results.NoContent();
             })
             .WithName("UpdateClientFinanceRecord")
