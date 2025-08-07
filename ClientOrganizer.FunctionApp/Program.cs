@@ -1,20 +1,21 @@
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SendGrid;
+using ClientOrganizer.FunctionApp;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.Services.AddAzureClients(azureBuilder =>
 {
-    azureBuilder.AddServiceBusClient(builder.Configuration.GetConnectionString("ServiceBusConnection"));
+    azureBuilder.AddServiceBusClient(builder.Configuration["ServiceBusConnection"]);
 });
 
+builder.Services.AddSingleton(sp =>
+    new SendGridClient(builder.Configuration["SendGridApiKey"]));
+
+builder.Services.AddScoped<FinanceEmailFunction>();
+
 builder.ConfigureFunctionsWebApplication();
-
-// Application Insights isn't enabled by default. See https://aka.ms/AAt8mw4.  
-// builder.Services  
-//     .AddApplicationInsightsTelemetryWorkerService()  
-//     .ConfigureFunctionsApplicationInsights();  
-
 builder.Build().Run();

@@ -1,4 +1,4 @@
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -13,10 +13,13 @@ namespace ClientOrganizer.FunctionApp
         public FinanceEmailFunction()
         {
             var apiKey = Environment.GetEnvironmentVariable("SendGridApiKey");
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new InvalidOperationException("Missing SendGridApiKey env variable.");
+
             _sendGridClient = new SendGridClient(apiKey);
         }
 
-        [FunctionName("FinanceEmailFunction")]
+        [Function("FinanceEmailFunction")]
         public async Task Run(
             [ServiceBusTrigger("%FinanceQueueName%", Connection = "ServiceBusConnection")] string queueMessage,
             ILogger log)
@@ -72,7 +75,13 @@ namespace ClientOrganizer.FunctionApp
             mail.AddContent("text/plain", body);
 
             var response = await _sendGridClient.SendEmailAsync(mail);
-            log.LogInformation($"Email sent to {clientEmail}: {response.StatusCode}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                log.LogError($"SendGrid failed: {response.StatusCode}, {await response.Body.ReadAsStringAsync()}");
+            }
+
+            log.LogInformation("Email sent to {Email} with status {Status}", clientEmail, response.StatusCode);
         }
     }
 }
