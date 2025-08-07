@@ -214,6 +214,9 @@ csx/
 ecf/
 rcf/
 
+# Application settings (contains secrets)
+ClientOrganizer.API/appsettings.json
+
 # Windows Store app package directories and files
 AppPackages/
 BundleArtifacts/

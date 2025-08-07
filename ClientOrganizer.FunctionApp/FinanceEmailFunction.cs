@@ -10,13 +10,9 @@ namespace ClientOrganizer.FunctionApp
         private readonly SendGridClient _sendGridClient;
         private readonly string _fromEmail = Environment.GetEnvironmentVariable("SendGridFromEmail")!;
 
-        public FinanceEmailFunction()
+        public FinanceEmailFunction(SendGridClient sendGridClient)
         {
-            var apiKey = Environment.GetEnvironmentVariable("SendGridApiKey");
-            if (string.IsNullOrWhiteSpace(apiKey))
-                throw new InvalidOperationException("Missing SendGridApiKey env variable.");
-
-            _sendGridClient = new SendGridClient(apiKey);
+            _sendGridClient = sendGridClient;
         }
 
         [Function("FinanceEmailFunction")]
@@ -75,12 +71,12 @@ namespace ClientOrganizer.FunctionApp
             mail.AddContent("text/plain", body);
 
             var response = await _sendGridClient.SendEmailAsync(mail);
-
+            var responseBody = await response.Body.ReadAsStringAsync();
+            
             if (!response.IsSuccessStatusCode)
             {
-                log.LogError($"SendGrid failed: {response.StatusCode}, {await response.Body.ReadAsStringAsync()}");
+                log.LogError("SendGrid failed. StatusCode: {StatusCode}, Response: {ResponseBody}", response.StatusCode, responseBody);
             }
-
             log.LogInformation("Email sent to {Email} with status {Status}", clientEmail, response.StatusCode);
         }
     }
