@@ -1,6 +1,6 @@
 namespace ClientOrganizer.API.Models.Dtos
 {
-    public class FinancialRecordDto
+    public class FinancialRecordReadDto
     {
         public int Id { get; set; }
         public int ClientId { get; set; }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SendGrid;
 using ClientOrganizer.FunctionApp;
+using ClientOrganizer.FunctionApp.Services;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -14,6 +15,10 @@ builder.Services.AddAzureClients(azureBuilder =>
 
 builder.Services.AddSingleton(sp =>
     new SendGridClient(builder.Configuration["SendGridApiKey"]));
+
+builder.Services.AddSingleton<IQueueMessageParser, QueueMessageParser>();
+builder.Services.AddSingleton<ISendGridMessageFactory, SendGridMessageFactory>();
+builder.Services.AddSingleton<IEmailContentProvider, FinanceEmailContentProvider>();
 
 builder.Services.AddScoped<FinanceEmailFunction>();
 
