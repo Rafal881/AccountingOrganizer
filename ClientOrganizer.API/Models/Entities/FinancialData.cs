@@ -10,6 +10,6 @@ namespace ClientOrganizer.API.Models.Entities
         public decimal Vat { get; set; }
         public decimal InsuranceAmount { get; set; }
 
-        public Client Client { get; set; }
+        public required Client Client { get; set; }
     }
 }

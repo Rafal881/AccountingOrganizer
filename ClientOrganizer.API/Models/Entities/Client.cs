@@ -3,11 +3,11 @@ namespace ClientOrganizer.API.Models.Entities
     public class Client
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string NipNb { get; set; }
-        public string Email { get; set; }
+        public required string Name { get; set; }
+        public required string Address { get; set; }
+        public required string NipNb { get; set; }
+        public required string Email { get; set; }
 
-        public ICollection<FinancialData> FinancialRecords { get; set; }
+        public ICollection<FinancialData>? FinancialRecords { get; set; }
     }
 }

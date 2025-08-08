@@ -2,6 +2,7 @@
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
+using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClientOrganizer.API.Endpoints
@@ -15,7 +16,7 @@ namespace ClientOrganizer.API.Endpoints
             {
                 var records = await db.FinancialData
                     .Where(f => f.ClientId == clientId)
-                    .Select(f => new FinancialRecordDto
+                    .Select(f => new FinancialRecordReadDto
                     {
                         Id = f.Id,
                         ClientId = f.ClientId,
@@ -37,7 +38,7 @@ namespace ClientOrganizer.API.Endpoints
             {
                 var record = await db.FinancialData
                     .Where(f => f.Id == id)
-                    .Select(f => new FinancialRecordDto
+                    .Select(f => new FinancialRecordReadDto
                     {
                         Id = f.Id,
                         ClientId = f.ClientId,
@@ -59,7 +60,7 @@ namespace ClientOrganizer.API.Endpoints
             {
                 var record = await db.FinancialData
                     .Where(f => f.ClientId == clientId && f.Month == month && f.Year == year)
-                    .Select(f => new FinancialRecordDto
+                    .Select(f => new FinancialRecordReadDto
                     {
                         Id = f.Id,
                         ClientId = f.ClientId,
@@ -76,15 +77,15 @@ namespace ClientOrganizer.API.Endpoints
             .WithName("GetClientFinanceByMonthYear")
             .WithTags("Finance");
 
-            // Create a new financial record for a client
-            app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordDto recordDto, ClientOrganizerDbContext db, FinanceMessageService messageService) =>
+            // Create a financial record for a client
+            app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordCreateDto createDto, ClientOrganizerDbContext db, FinanceMessageService messageService) =>
             {
                 var exists = await db.FinancialData
-                    .AnyAsync(f => f.ClientId == clientId && f.Month == recordDto.Month && f.Year == recordDto.Year);
+                    .AnyAsync(f => f.ClientId == clientId && f.Month == createDto.Month && f.Year == createDto.Year);
 
                 if (exists)
-                    return Results.Conflict($"Financial record for client {clientId} in {recordDto.Month}/{recordDto.Year} already exists.");
-                
+                    return Results.Conflict($"Financial record for client {clientId} in {createDto.Month}/{createDto.Year} already exists.");
+
                 var client = await db.Clients.FindAsync(clientId);
                 if (client is null)
                     return Results.NotFound($"Client with id {clientId} not found.");
@@ -92,19 +93,27 @@ namespace ClientOrganizer.API.Endpoints
                 var record = new FinancialData
                 {
                     ClientId = clientId,
-                    Month = recordDto.Month,
-                    Year = recordDto.Year,
-                    IncomeTax = recordDto.IncomeTax,
-                    Vat = recordDto.Vat,
-                    InsuranceAmount = recordDto.InsuranceAmount
+                    Month = createDto.Month,
+                    Year = createDto.Year,
+                    IncomeTax = createDto.IncomeTax,
+                    Vat = createDto.Vat,
+                    InsuranceAmount = createDto.InsuranceAmount,
+                    Client = client
                 };
 
                 db.FinancialData.Add(record);
                 await db.SaveChangesAsync();
 
-                recordDto.Id = record.Id;
-                recordDto.ClientId = clientId;
-                
+                var recordDto = new FinancialRecordReadDto
+                {
+                    Id = record.Id,
+                    ClientId = clientId,
+                    Month = record.Month,
+                    Year = record.Year,
+                    IncomeTax = record.IncomeTax,
+                    Vat = record.Vat,
+                    InsuranceAmount = record.InsuranceAmount
+                };
 
                 await messageService.SendFinancialRecordCreatedAsync(recordDto, client.Email);
 
@@ -124,9 +133,6 @@ namespace ClientOrganizer.API.Endpoints
                     return Results.BadRequest("At least one property must be provided for update.");
                 }
 
-                if (updateDto.Month is null || updateDto.Year is null)
-                    return Results.BadRequest("Month and Year are required to identify the record.");
-
                 var record = await db.FinancialData
                     .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == updateDto.Month && f.Year == updateDto.Year);
 
@@ -143,7 +149,7 @@ namespace ClientOrganizer.API.Endpoints
 
                 await db.SaveChangesAsync();
 
-                var updatedRecordDto = new FinancialRecordDto
+                var updatedRecordDto = new FinancialRecordReadDto
                 {
                     Id = record.Id,
                     ClientId = record.ClientId,

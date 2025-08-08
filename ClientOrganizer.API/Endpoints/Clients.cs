@@ -13,7 +13,7 @@ namespace ClientOrganizer.API.Endpoints
             app.MapGet("/clients", async (ClientOrganizerDbContext db) =>
             {
                 var clients = await db.Clients
-                    .Select(c => new ClientDto
+                    .Select(c => new ClientReadDto
                     {
                         Id = c.Id,
                         Name = c.Name,
@@ -33,7 +33,7 @@ namespace ClientOrganizer.API.Endpoints
             {
                 var client = await db.Clients
                     .Where(c => c.Id == id)
-                    .Select(c => new ClientDto
+                    .Select(c => new ClientReadDto
                     {
                         Id = c.Id,
                         Name = c.Name,
@@ -49,25 +49,32 @@ namespace ClientOrganizer.API.Endpoints
             .WithTags("Clients");
 
             // Create client
-            app.MapPost("/clients", async (ClientDto clientDto, ClientOrganizerDbContext db) =>
+            app.MapPost("/clients", async (ClientCreateDto clientCreateDto, ClientOrganizerDbContext db) =>
             {
-                // Check for existing client with the same NipNb (unique constraint)
-                var exists = await db.Clients.AnyAsync(c => c.NipNb == clientDto.NipNb);
+                var exists = await db.Clients.AnyAsync(c => c.NipNb == clientCreateDto.NipNb);
                 if (exists)
-                    return Results.Conflict($"Client with NipNb '{clientDto.NipNb}' already exists.");
+                    return Results.Conflict($"Client with NipNb '{clientCreateDto.NipNb}' already exists.");
 
                 var client = new Client
                 {
-                    Name = clientDto.Name,
-                    Address = clientDto.Address,
-                    NipNb = clientDto.NipNb,
-                    Email = clientDto.Email
+                    Name = clientCreateDto.Name,
+                    Address = clientCreateDto.Address,
+                    NipNb = clientCreateDto.NipNb,
+                    Email = clientCreateDto.Email
                 };
 
                 db.Clients.Add(client);
                 await db.SaveChangesAsync();
 
-                clientDto.Id = client.Id;
+                var clientDto = new ClientReadDto
+                {
+                    Id = client.Id,
+                    Name = client.Name,
+                    Address = client.Address,
+                    NipNb = client.NipNb,
+                    Email = client.Email
+                };
+
                 return Results.Created($"/clients/{client.Id}", clientDto);
             })
             .WithName("CreateClient")
