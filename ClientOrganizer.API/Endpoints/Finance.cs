@@ -1,4 +1,3 @@
-using Azure.Messaging.ServiceBus;
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;

@@ -31,6 +31,7 @@ public static class Clients
             var created = await service.CreateClientAsync(clientCreateDto);
             if (created is null)
                 return Results.Conflict($"Client with NipNb '{clientCreateDto.NipNb}' already exists.");
+
             return Results.Created($"/clients/{created.Id}", created);
         })
         .WithName("CreateClient")
