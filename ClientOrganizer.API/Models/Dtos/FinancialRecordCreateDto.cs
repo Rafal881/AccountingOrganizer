@@ -1,11 +1,19 @@
-namespace ClientOrganizer.API.Models.Dtos
+using System.ComponentModel.DataAnnotations;
+
+public class FinancialRecordCreateDto
 {
-    public class FinancialRecordCreateDto
-    {
-        public int Month { get; set; }
-        public int Year { get; set; }
-        public decimal IncomeTax { get; set; }
-        public decimal Vat { get; set; }
-        public decimal InsuranceAmount { get; set; }
-    }
+    [Range(1, 12)]
+    public int Month { get; set; }
+
+    [Range(2000, 2100)]
+    public int Year { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal IncomeTax { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Vat { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal InsuranceAmount { get; set; }
 }
