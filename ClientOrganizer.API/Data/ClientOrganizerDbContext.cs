@@ -10,23 +10,14 @@ namespace ClientOrganizer.API.Data
         {
         }
 
-        public DbSet<Client> Clients { get; set; }
-        public DbSet<FinancialData> FinancialData { get; set; }
+        public DbSet<Client> Clients => Set<Client>();
+        public DbSet<FinancialData> FinancialData => Set<FinancialData>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Client>()
-                .HasIndex(c => c.NipNb)
-                .IsUnique();
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ClientOrganizerDbContext).Assembly);
 
-            modelBuilder.Entity<FinancialData>()
-                .HasIndex(f => new { f.ClientId, f.Month, f.Year })
-                .IsUnique();
-
-            modelBuilder.Entity<FinancialData>()
-                .HasOne(f => f.Client)
-                .WithMany(c => c.FinancialRecords)
-                .HasForeignKey(f => f.ClientId);
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

@@ -35,6 +35,7 @@ namespace ClientOrganizer.API.Configuration
                 var connectionString = builder.Configuration["ServiceBus:ConnectionString"];
                 return new ServiceBusClient(connectionString);
             });
+
             builder.Services.AddSingleton<ServiceBusSender>(sp =>
             {
                 var client = sp.GetRequiredService<ServiceBusClient>();
