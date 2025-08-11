@@ -23,7 +23,7 @@ namespace ClientOrganizer.FunctionApp.Services
             };
         }
 
-        private EmailContent? LogUnknownEvent(string eventType, ILogger log)
+        private static EmailContent? LogUnknownEvent(string eventType, ILogger log)
         {
             log.LogWarning("Unknown event type: {eventType}", eventType);
             return null;

@@ -98,7 +98,21 @@ namespace ClientOrganizer.API.Endpoints
 
                 if (updateDto.Name is not null) client.Name = updateDto.Name;
                 if (updateDto.Address is not null) client.Address = updateDto.Address;
-                if (updateDto.NipNb is not null) client.NipNb = updateDto.NipNb;
+
+                if (updateDto.NipNb is not null)
+                {
+                    if (updateDto.NipNb != client.NipNb)
+                    {
+                        var nipExists = await db.Clients
+                            .AnyAsync(c => c.NipNb == updateDto.NipNb && c.Id != id);
+                        if (nipExists)
+                        {
+                            return Results.Conflict($"Client with NipNb '{updateDto.NipNb}' already exists.");
+                        }
+                        client.NipNb = updateDto.NipNb;
+                    }
+                }
+
                 if (updateDto.Email is not null) client.Email = updateDto.Email;
 
                 await db.SaveChangesAsync();
