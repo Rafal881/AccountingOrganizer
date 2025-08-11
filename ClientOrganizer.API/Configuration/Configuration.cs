@@ -16,6 +16,7 @@ namespace ClientOrganizer.API.Configuration
             builder.Services.AddSwaggerGen();
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddScoped<IClientService, ClientService>();
+            builder.Services.AddScoped<IFinanceService, FinanceService>();
 
             // EF Core DbContext
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
