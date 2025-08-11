@@ -12,12 +12,3 @@ public interface IFinanceService
     Task<bool> DeleteAsync(int id);
 }
 
-public record FinanceServiceResult(FinanceServiceError Error, FinancialRecordReadDto? Record);
-
-public enum FinanceServiceError
-{
-    None,
-    Conflict,
-    NotFound
-}
-
