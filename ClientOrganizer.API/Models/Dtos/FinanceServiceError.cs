@@ -1,4 +1,4 @@
-namespace ClientOrganizer.API.Services;
+namespace ClientOrganizer.API.Models.Dtos;
 
 public enum FinanceServiceError
 {
