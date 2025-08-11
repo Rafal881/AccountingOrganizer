@@ -8,18 +8,18 @@ namespace ClientOrganizer.API.Services;
 
 public class FinanceService : IFinanceService
 {
-    private readonly ClientOrganizerDbContext _db;
+    private readonly ClientOrganizerDbContext dbContext;
     private readonly FinanceMessageService _messageService;
 
     public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService)
     {
-        _db = db;
+        dbContext = db;
         _messageService = messageService;
     }
 
     public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId)
     {
-        return await _db.FinancialData
+        return await dbContext.FinancialData
             .Where(f => f.ClientId == clientId)
             .Select(f => new FinancialRecordReadDto
             {
@@ -36,7 +36,7 @@ public class FinanceService : IFinanceService
 
     public async Task<FinancialRecordReadDto?> GetByIdAsync(int id)
     {
-        return await _db.FinancialData
+        return await dbContext.FinancialData
             .Where(f => f.Id == id)
             .Select(f => new FinancialRecordReadDto
             {
@@ -53,7 +53,7 @@ public class FinanceService : IFinanceService
 
     public async Task<FinancialRecordReadDto?> GetByClientMonthYearAsync(int clientId, int month, int year)
     {
-        return await _db.FinancialData
+        return await dbContext.FinancialData
             .Where(f => f.ClientId == clientId && f.Month == month && f.Year == year)
             .Select(f => new FinancialRecordReadDto
             {
@@ -70,18 +70,15 @@ public class FinanceService : IFinanceService
 
     public async Task<FinanceServiceResult> CreateAsync(int clientId, FinancialRecordCreateDto createDto)
     {
-        var exists = await _db.FinancialData
+        var exists = await dbContext.FinancialData
             .AnyAsync(f => f.ClientId == clientId && f.Month == createDto.Month && f.Year == createDto.Year);
-        if (exists)
-        {
-            return new FinanceServiceResult(FinanceServiceError.Conflict, null);
-        }
 
-        var client = await _db.Clients.FindAsync(clientId);
+        if (exists)
+            return new FinanceServiceResult(FinanceServiceError.Conflict, null);
+
+        var client = await dbContext.Clients.FindAsync(clientId);
         if (client is null)
-        {
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
-        }
 
         var record = new FinancialData
         {
@@ -94,8 +91,8 @@ public class FinanceService : IFinanceService
             Client = client
         };
 
-        _db.FinancialData.Add(record);
-        await _db.SaveChangesAsync();
+        dbContext.FinancialData.Add(record);
+        await dbContext.SaveChangesAsync();
 
         var recordDto = new FinancialRecordReadDto
         {
@@ -115,15 +112,13 @@ public class FinanceService : IFinanceService
 
     public async Task<FinanceServiceResult> UpdateAsync(int clientId, FinancialRecordUpdateDto updateDto)
     {
-        var record = await _db.FinancialData
+        var record = await dbContext.FinancialData
             .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == updateDto.Month && f.Year == updateDto.Year);
 
         if (record is null)
-        {
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
-        }
 
-        var client = await _db.Clients.FindAsync(clientId);
+        var client = await dbContext.Clients.FindAsync(clientId);
         if (client is null)
         {
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
@@ -133,7 +128,7 @@ public class FinanceService : IFinanceService
         if (updateDto.Vat is not null) record.Vat = updateDto.Vat.Value;
         if (updateDto.InsuranceAmount is not null) record.InsuranceAmount = updateDto.InsuranceAmount.Value;
 
-        await _db.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
         var recordDto = new FinancialRecordReadDto
         {
@@ -153,14 +148,11 @@ public class FinanceService : IFinanceService
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var record = await _db.FinancialData.FindAsync(id);
-        if (record is null)
-        {
-            return false;
-        }
+        var record = await dbContext.FinancialData.FindAsync(id);
+        if (record is null) return false;
 
-        _db.FinancialData.Remove(record);
-        await _db.SaveChangesAsync();
+        dbContext.FinancialData.Remove(record);
+        await dbContext.SaveChangesAsync();
         return true;
     }
 }
