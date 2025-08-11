@@ -1,3 +1,4 @@
+using AutoMapper;
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
@@ -10,62 +11,35 @@ public class FinanceService : IFinanceService
 {
     private readonly ClientOrganizerDbContext dbContext;
     private readonly FinanceMessageService _messageService;
+    private readonly IMapper _mapper;
 
-    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService)
+    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService, IMapper mapper)
     {
         dbContext = db;
         _messageService = messageService;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId)
     {
-        return await dbContext.FinancialData
+        var records = await _db.FinancialData
             .Where(f => f.ClientId == clientId)
-            .Select(f => new FinancialRecordReadDto
-            {
-                Id = f.Id,
-                ClientId = f.ClientId,
-                Month = f.Month,
-                Year = f.Year,
-                IncomeTax = f.IncomeTax,
-                Vat = f.Vat,
-                InsuranceAmount = f.InsuranceAmount
-            })
             .ToListAsync();
+
+        return _mapper.Map<IEnumerable<FinancialRecordReadDto>>(records);
     }
 
     public async Task<FinancialRecordReadDto?> GetByIdAsync(int id)
     {
-        return await dbContext.FinancialData
-            .Where(f => f.Id == id)
-            .Select(f => new FinancialRecordReadDto
-            {
-                Id = f.Id,
-                ClientId = f.ClientId,
-                Month = f.Month,
-                Year = f.Year,
-                IncomeTax = f.IncomeTax,
-                Vat = f.Vat,
-                InsuranceAmount = f.InsuranceAmount
-            })
-            .FirstOrDefaultAsync();
+        var record = await _db.FinancialData.FindAsync(id);
+        return record is null ? null : _mapper.Map<FinancialRecordReadDto>(record);
     }
 
     public async Task<FinancialRecordReadDto?> GetByClientMonthYearAsync(int clientId, int month, int year)
     {
-        return await dbContext.FinancialData
-            .Where(f => f.ClientId == clientId && f.Month == month && f.Year == year)
-            .Select(f => new FinancialRecordReadDto
-            {
-                Id = f.Id,
-                ClientId = f.ClientId,
-                Month = f.Month,
-                Year = f.Year,
-                IncomeTax = f.IncomeTax,
-                Vat = f.Vat,
-                InsuranceAmount = f.InsuranceAmount
-            })
-            .FirstOrDefaultAsync();
+        var record = await _db.FinancialData
+            .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == month && f.Year == year);
+        return record is null ? null : _mapper.Map<FinancialRecordReadDto>(record);
     }
 
     public async Task<FinanceServiceResult> CreateAsync(int clientId, FinancialRecordCreateDto createDto)
@@ -80,30 +54,14 @@ public class FinanceService : IFinanceService
         if (client is null)
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
 
-        var record = new FinancialData
-        {
-            ClientId = clientId,
-            Month = createDto.Month,
-            Year = createDto.Year,
-            IncomeTax = createDto.IncomeTax,
-            Vat = createDto.Vat,
-            InsuranceAmount = createDto.InsuranceAmount,
-            Client = client
-        };
+        var record = _mapper.Map<FinancialData>(createDto);
+        record.ClientId = clientId;
+        record.Client = client;
 
         dbContext.FinancialData.Add(record);
         await dbContext.SaveChangesAsync();
 
-        var recordDto = new FinancialRecordReadDto
-        {
-            Id = record.Id,
-            ClientId = record.ClientId,
-            Month = record.Month,
-            Year = record.Year,
-            IncomeTax = record.IncomeTax,
-            Vat = record.Vat,
-            InsuranceAmount = record.InsuranceAmount
-        };
+        var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
 
         await _messageService.SendFinancialRecordCreatedAsync(recordDto, client.Email);
 
@@ -124,22 +82,11 @@ public class FinanceService : IFinanceService
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
         }
 
-        if (updateDto.IncomeTax is not null) record.IncomeTax = updateDto.IncomeTax.Value;
-        if (updateDto.Vat is not null) record.Vat = updateDto.Vat.Value;
-        if (updateDto.InsuranceAmount is not null) record.InsuranceAmount = updateDto.InsuranceAmount.Value;
+        _mapper.Map(updateDto, record);
 
         await dbContext.SaveChangesAsync();
 
-        var recordDto = new FinancialRecordReadDto
-        {
-            Id = record.Id,
-            ClientId = record.ClientId,
-            Month = record.Month,
-            Year = record.Year,
-            IncomeTax = record.IncomeTax,
-            Vat = record.Vat,
-            InsuranceAmount = record.InsuranceAmount
-        };
+        var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
 
         await _messageService.SendFinancialRecordUpdatedAsync(recordDto, client.Email);
 
