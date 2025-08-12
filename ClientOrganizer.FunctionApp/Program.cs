@@ -8,9 +8,12 @@ using ClientOrganizer.FunctionApp.Services;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
+var serviceBusConnectionString = Environment.GetEnvironmentVariable("serviceBusConnectionString")
+    ?? throw new InvalidOperationException("Service Bus connection string not found in environment variables.");
+
 builder.Services.AddAzureClients(azureBuilder =>
 {
-    azureBuilder.AddServiceBusClient(builder.Configuration["ServiceBusConnection"]);
+    azureBuilder.AddServiceBusClient(serviceBusConnectionString);
 });
 
 builder.Services.AddSingleton(sp =>
