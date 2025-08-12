@@ -1,0 +1,6 @@
+root = true
+
+[ClientOrganizer.API/Migrations/*.cs]
+# Treat EF Core migrations as generated code to silence analyzer warnings
+# so we do not need global suppressions.
+generated_code = true
