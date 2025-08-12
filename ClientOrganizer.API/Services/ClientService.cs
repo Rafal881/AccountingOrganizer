@@ -19,13 +19,17 @@ public class ClientService : IClientService
 
     public async Task<IEnumerable<ClientReadDto>> GetClientsAsync()
     {
-        var clients = await _dbContext.Clients.ToListAsync();
+        var clients = await _dbContext.Clients
+            .AsNoTracking()
+            .ToListAsync();
         return _mapper.Map<IEnumerable<ClientReadDto>>(clients);
     }
 
     public async Task<ClientReadDto?> GetClientByIdAsync(int id)
     {
-        var client = await _dbContext.Clients.FindAsync(id);
+        var client = await _dbContext.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id);
         return client is null ? null : _mapper.Map<ClientReadDto>(client);
     }
 
