@@ -1,5 +1,4 @@
 using Azure.Messaging.ServiceBus;
-using AutoMapper;
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Services;
 using ClientOrganizer.API.Services.Messaging;
