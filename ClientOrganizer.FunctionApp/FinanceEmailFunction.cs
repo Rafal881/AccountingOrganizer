@@ -2,6 +2,9 @@ using ClientOrganizer.FunctionApp.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using SendGrid;
+using ClientOrganizer.FunctionApp.Configuration;
+using Microsoft.Extensions.Options;
+using System;
 
 namespace ClientOrganizer.FunctionApp
 {
@@ -11,18 +14,24 @@ namespace ClientOrganizer.FunctionApp
         private readonly IEmailContentProvider _contentProvider;
         private readonly IQueueMessageParser _messageParser;
         private readonly ISendGridMessageFactory _messageFactory;
-        private readonly string _fromEmail = Environment.GetEnvironmentVariable("SendGridFromEmail")!;
+        private readonly string _fromEmail;
 
         public FinanceEmailFunction(
             SendGridClient sendGridClient,
             IEmailContentProvider contentProvider,
             IQueueMessageParser messageParser,
-            ISendGridMessageFactory messageFactory)
+            ISendGridMessageFactory messageFactory,
+            IOptions<SendGridOptions> sendGridOptions)
         {
             _sendGridClient = sendGridClient;
             _contentProvider = contentProvider;
             _messageParser = messageParser;
             _messageFactory = messageFactory;
+            _fromEmail = sendGridOptions.Value.FromEmail;
+            if (string.IsNullOrWhiteSpace(_fromEmail))
+            {
+                throw new InvalidOperationException("SendGrid FromEmail is not configured.");
+            }
         }
 
         [Function("FinanceEmailFunction")]
