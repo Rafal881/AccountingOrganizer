@@ -1,7 +1,10 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
+using AutoMapper;
 using ClientOrganizer.API.Data;
+using ClientOrganizer.API.Services;
 using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ClientOrganizer.API.Configuration
 {
@@ -9,9 +12,11 @@ namespace ClientOrganizer.API.Configuration
     {
         public static void RegisterServices(this WebApplicationBuilder builder)
         {
-            builder.Services
-                   .AddEndpointsApiExplorer()
-                   .AddSwaggerGen();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+            builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddScoped<IClientService, ClientService>();
+            builder.Services.AddScoped<IFinanceService, FinanceService>();
 
             // EF Core DbContext
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -30,17 +35,22 @@ namespace ClientOrganizer.API.Configuration
                 options.UseSqlServer(connectionString));
 
             // Bus client and bus sender
+            builder.Services.AddOptions<ServiceBusOptions>()
+                .Bind(builder.Configuration.GetSection("ServiceBus"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
             builder.Services.AddSingleton<ServiceBusClient>(sp =>
             {
-                var connectionString = builder.Configuration["ServiceBus:ConnectionString"];
-                return new ServiceBusClient(connectionString);
+                var options = sp.GetRequiredService<IOptions<ServiceBusOptions>>().Value;
+                return new ServiceBusClient(options.ConnectionString);
             });
 
             builder.Services.AddSingleton<ServiceBusSender>(sp =>
             {
                 var client = sp.GetRequiredService<ServiceBusClient>();
-                var queueName = builder.Configuration["ServiceBus:QueueName"];
-                return client.CreateSender(queueName);
+                var options = sp.GetRequiredService<IOptions<ServiceBusOptions>>().Value;
+                return client.CreateSender(options.QueueName);
             });
 
             builder.Services.AddScoped<FinanceMessageService>();
