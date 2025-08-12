@@ -27,7 +27,7 @@ namespace ClientOrganizer.FunctionApp
 
         [Function("FinanceEmailFunction")]
         public async Task Run(
-            [ServiceBusTrigger("%FinanceQueueName%", Connection = "ServiceBusConnection")] string queueMessage,
+            [ServiceBusTrigger("%FinanceQueueName%", Connection = "serviceBusConnectionString")] string queueMessage,
             FunctionContext context)
         {
             var log = context.GetLogger("FinanceEmailFunction");

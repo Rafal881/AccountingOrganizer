@@ -37,6 +37,15 @@ namespace ClientOrganizer.API.Configuration
             // Bus client and bus sender
             builder.Services.AddOptions<ServiceBusOptions>()
                 .Bind(builder.Configuration.GetSection("ServiceBus"))
+                .PostConfigure(options =>
+                {
+                    var serviceBusConnectionString = Environment.GetEnvironmentVariable("serviceBusConnectionString");
+                    if (string.IsNullOrWhiteSpace(serviceBusConnectionString))
+                    {
+                        throw new InvalidOperationException("Service Bus connection string not found in environment variables.");
+                    }
+                    options.ConnectionString = serviceBusConnectionString;
+                })
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
