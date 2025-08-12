@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 using SendGrid;
 using ClientOrganizer.FunctionApp;
 using ClientOrganizer.FunctionApp.Services;
+using ClientOrganizer.FunctionApp.Configuration;
+using Microsoft.Extensions.Options;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -16,8 +18,17 @@ builder.Services.AddAzureClients(azureBuilder =>
     azureBuilder.AddServiceBusClient(serviceBusConnectionString);
 });
 
+builder.Services.Configure<SendGridOptions>(builder.Configuration.GetSection("SendGrid"));
+
 builder.Services.AddSingleton(sp =>
-    new SendGridClient(builder.Configuration["SendGridApiKey"]));
+{
+    var options = sp.GetRequiredService<IOptions<SendGridOptions>>().Value;
+    if (string.IsNullOrWhiteSpace(options.ApiKey))
+    {
+        throw new InvalidOperationException("SendGrid ApiKey configuration is missing.");
+    }
+    return new SendGridClient(options.ApiKey);
+});
 
 builder.Services.AddSingleton<IQueueMessageParser, QueueMessageParser>();
 builder.Services.AddSingleton<ISendGridMessageFactory, SendGridMessageFactory>();
