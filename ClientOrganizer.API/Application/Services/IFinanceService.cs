@@ -1,6 +1,6 @@
 using ClientOrganizer.API.Models.Dtos;
 
-namespace ClientOrganizer.API.Services;
+namespace ClientOrganizer.API.Application.Services;
 
 public interface IFinanceService
 {

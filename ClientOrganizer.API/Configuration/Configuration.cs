@@ -1,10 +1,12 @@
 using Azure.Messaging.ServiceBus;
 using ClientOrganizer.API.Data;
-using ClientOrganizer.API.Services;
-using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Caching.Hybrid;
+using ClientOrganizer.API.Application.Services;
+using ClientOrganizer.API.Application.Services.Messaging;
+using ClientOrganizer.API.Application.Validators;
+using FluentValidation;
 
 namespace ClientOrganizer.API.Configuration
 {
@@ -17,6 +19,8 @@ namespace ClientOrganizer.API.Configuration
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddScoped<IClientService, ClientService>();
             builder.Services.AddScoped<IFinanceService, FinanceService>();
+
+            builder.Services.AddValidatorsFromAssemblyContaining<ClientCreateDtoValidator>();
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHybridCache(options =>

@@ -1,12 +1,12 @@
 using AutoMapper;
+using ClientOrganizer.API.Application.Services.Messaging;
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
-using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 
-namespace ClientOrganizer.API.Services;
+namespace ClientOrganizer.API.Application.Services;
 
 public class FinanceService : IFinanceService
 {

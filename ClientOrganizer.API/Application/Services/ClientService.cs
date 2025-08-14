@@ -5,7 +5,7 @@ using ClientOrganizer.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-namespace ClientOrganizer.API.Services;
+namespace ClientOrganizer.API.Application.Services;
 
 public class ClientService : IClientService
 {
