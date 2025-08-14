@@ -3,6 +3,7 @@ using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ClientOrganizer.API.Services;
 
@@ -17,10 +18,16 @@ public class ClientService : IClientService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<ClientReadDto>> GetClientsAsync()
+    public async Task<IEnumerable<ClientReadDto>> GetClientsAsync(int page, int pageSize)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        
         var clients = await _dbContext.Clients
             .AsNoTracking()
+            .OrderBy(c => c.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
         return _mapper.Map<IEnumerable<ClientReadDto>>(clients);
     }

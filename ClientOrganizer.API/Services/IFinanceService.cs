@@ -4,7 +4,7 @@ namespace ClientOrganizer.API.Services;
 
 public interface IFinanceService
 {
-    Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId);
+    Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId, int page, int pageSize);
     Task<FinancialRecordReadDto?> GetByIdAsync(int id);
     Task<FinancialRecordReadDto?> GetByClientMonthYearAsync(int clientId, int month, int year);
     Task<FinanceServiceResult> CreateAsync(int clientId, FinancialRecordCreateDto createDto);

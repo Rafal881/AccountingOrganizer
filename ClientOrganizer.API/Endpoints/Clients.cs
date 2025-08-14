@@ -1,5 +1,6 @@
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Services;
+using System.Net;
 
 namespace ClientOrganizer.API.Endpoints;
 
@@ -8,9 +9,9 @@ public static class Clients
     public static void RegisterClientsEndpoints(this WebApplication app)
     {
         // Get all clients
-        app.MapGet("/clients", async (IClientService service) =>
+        app.MapGet("/clients", async (IClientService service, int page = 1, int pageSize = 10) =>
         {
-            var clients = await service.GetClientsAsync();
+            var clients = await service.GetClientsAsync(page, pageSize);
             return clients.Any() ? Results.Ok(clients) : Results.NotFound();
         })
         .WithName("GetClients")
