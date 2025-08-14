@@ -1,12 +1,15 @@
+using AutoMapper;
 using Azure.Messaging.ServiceBus;
-using ClientOrganizer.API.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Caching.Hybrid;
+using ClientOrganizer.API.Application.Mappings;
 using ClientOrganizer.API.Application.Services;
 using ClientOrganizer.API.Application.Services.Messaging;
 using ClientOrganizer.API.Application.Validators;
+using ClientOrganizer.API.Data;
+using ClientOrganizer.API.Models.Dtos;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Options;
 
 namespace ClientOrganizer.API.Configuration
 {
@@ -16,11 +19,26 @@ namespace ClientOrganizer.API.Configuration
         {
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddAutoMapper(typeof(Program));
+
+            builder.Services.AddAutoMapper(cfg =>
+            {
+                cfg.AddProfile<ClientProfile>();
+                cfg.AddProfile<FinanceProfile>();
+            });
+
+            var mapperConfigExpression = new MapperConfigurationExpression();
+            mapperConfigExpression.AddProfile<ClientProfile>();
+            mapperConfigExpression.AddProfile<FinanceProfile>();
+
+
             builder.Services.AddScoped<IClientService, ClientService>();
             builder.Services.AddScoped<IFinanceService, FinanceService>();
 
-            builder.Services.AddValidatorsFromAssemblyContaining<ClientCreateDtoValidator>();
+            builder.Services.AddScoped<IValidator<ClientCreateDto>, ClientCreateDtoValidator>();
+            builder.Services.AddScoped<IValidator<ClientUpdateDto>, ClientUpdateDtoValidator>();
+            builder.Services.AddScoped<IValidator<FinancialRecordCreateDto>, FinancialRecordCreateDtoValidator>();
+            builder.Services.AddScoped<IValidator<FinancialRecordUpdateDto>, FinancialRecordUpdateDtoValidator>();
+
 
             builder.Services.AddMemoryCache();
             builder.Services.AddHybridCache(options =>
