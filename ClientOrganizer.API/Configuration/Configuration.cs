@@ -4,6 +4,7 @@ using ClientOrganizer.API.Services;
 using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace ClientOrganizer.API.Configuration
 {
@@ -16,6 +17,19 @@ namespace ClientOrganizer.API.Configuration
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddScoped<IClientService, ClientService>();
             builder.Services.AddScoped<IFinanceService, FinanceService>();
+
+            builder.Services.AddMemoryCache();
+            builder.Services.AddHybridCache(options =>
+            {
+                options.MaximumPayloadBytes = 1024 * 1024 * 10; // 10MB
+                options.MaximumKeyLength = 512;
+
+                options.DefaultEntryOptions = new HybridCacheEntryOptions
+                {
+                    Expiration = TimeSpan.FromMinutes(30),
+                    LocalCacheExpiration = TimeSpan.FromMinutes(30)
+                };
+            });
 
             // EF Core DbContext
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

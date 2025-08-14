@@ -15,7 +15,7 @@ namespace ClientOrganizer.API.Services.Messaging
         {
             var messageBody = System.Text.Json.JsonSerializer.Serialize(new
             {
-                Event = "NewFinancialRecordCreated",
+                Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
                 Record = new
                 {
                     dto.Id,
@@ -36,7 +36,7 @@ namespace ClientOrganizer.API.Services.Messaging
         {
             var messageBody = System.Text.Json.JsonSerializer.Serialize(new
             {
-                Event = "FinancialRecordUpdated",
+                Event = FinanceEventType.FinancialRecordUpdated.ToString(),
                 Record = new
                 {
                     dto.Id,

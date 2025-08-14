@@ -1,15 +1,16 @@
+using ClientOrganizer.FunctionApp.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ClientOrganizer.FunctionApp.Services
 {
     public class QueueMessageParser : IQueueMessageParser
     {
-        public bool TryParse(string queueMessage, ILogger log, out string clientEmail, out int month, out int year, out string eventType)
+        public bool TryParse(string queueMessage, ILogger log, out string clientEmail, out int month, out int year, out FinanceEventType eventType)
         {
             clientEmail = string.Empty;
             month = 0;
             year = 0;
-            eventType = string.Empty;
+            eventType = default;
 
             try
             {
@@ -31,10 +32,16 @@ namespace ClientOrganizer.FunctionApp.Services
                 month = record.TryGetProperty("Month", out var monthProp) ? monthProp.GetInt32() : 0;
                 year = record.TryGetProperty("Year", out var yearProp) ? yearProp.GetInt32() : 0;
 
-                eventType = msg.TryGetProperty("Event", out var eventProp) ? eventProp.GetString() ?? string.Empty : string.Empty;
-                if (string.IsNullOrWhiteSpace(eventType))
+                var eventTypeString = msg.TryGetProperty("Event", out var eventProp) ? eventProp.GetString() ?? string.Empty : string.Empty;
+                if (string.IsNullOrWhiteSpace(eventTypeString))
                 {
                     log.LogWarning("No 'Event' property found in message.");
+                    return false;
+                }
+
+                if (!Enum.TryParse(eventTypeString, out eventType))
+                {
+                    log.LogWarning("Unknown event type: {EventType}", eventTypeString);
                     return false;
                 }
 

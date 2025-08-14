@@ -5,6 +5,6 @@ namespace ClientOrganizer.FunctionApp.Services
 {
     public interface IEmailContentProvider
     {
-        EmailContent? GetContent(string eventType, int month, int year, ILogger log);
+        EmailContent? GetContent(FinanceEventType eventType, int month, int year, ILogger log);
     }
 }
