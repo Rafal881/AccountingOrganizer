@@ -42,13 +42,16 @@ public class FinanceService : IFinanceService
 
     public async Task<FinancialRecordReadDto?> GetByIdAsync(int id)
     {
-        var record = await _dbContext.FinancialData.FindAsync(id);
+        var record = await _dbContext.FinancialData
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id);
         return record is null ? null : _mapper.Map<FinancialRecordReadDto>(record);
     }
 
     public async Task<FinancialRecordReadDto?> GetByClientMonthYearAsync(int clientId, int month, int year)
     {
         var record = await _dbContext.FinancialData
+            .AsNoTracking()
             .FirstOrDefaultAsync(f => f.ClientId == clientId && f.Month == month && f.Year == year);
         return record is null ? null : _mapper.Map<FinancialRecordReadDto>(record);
     }
@@ -89,7 +92,9 @@ public class FinanceService : IFinanceService
         if (record is null)
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
 
-        var client = await _dbContext.Clients.FindAsync(clientId);
+        var client = await _dbContext.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == clientId);
         if (client is null)
         {
             return new FinanceServiceResult(FinanceServiceError.NotFound, null);
