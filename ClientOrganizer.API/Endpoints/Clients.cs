@@ -1,6 +1,6 @@
+using ClientOrganizer.API.Application.Services;
 using ClientOrganizer.API.Models.Dtos;
-using ClientOrganizer.API.Services;
-using System.Net;
+using FluentValidation;
 
 namespace ClientOrganizer.API.Endpoints;
 
@@ -27,8 +27,15 @@ public static class Clients
         .WithTags("Clients");
 
         // Create client
-        app.MapPost("/clients", async (ClientCreateDto clientCreateDto, IClientService service) =>
+        app.MapPost("/clients", async (ClientCreateDto clientCreateDto, IClientService service, IValidator<ClientCreateDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(clientCreateDto);
+            if (!validationResult.IsValid)
+                return Results.ValidationProblem(
+                    validationResult.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
+
             var created = await service.CreateClientAsync(clientCreateDto);
             if (created is null)
                 return Results.Conflict($"Client with NipNb '{clientCreateDto.NipNb}' already exists.");
@@ -39,16 +46,14 @@ public static class Clients
         .WithTags("Clients");
 
         // Update client
-        app.MapPut("/clients/{id}", async (int id, ClientUpdateDto updateDto, IClientService service) =>
+        app.MapPut("/clients/{id}", async (int id, ClientUpdateDto updateDto, IClientService service, IValidator<ClientUpdateDto> validator) =>
         {
-            if (updateDto is null ||
-                updateDto.Name is null &&
-                updateDto.Address is null &&
-                updateDto.NipNb is null &&
-                updateDto.Email is null)
-            {
-                return Results.BadRequest("At least one property must be provided for update.");
-            }
+            var validationResult = await validator.ValidateAsync(updateDto);
+            if (!validationResult.IsValid)
+                return Results.ValidationProblem(
+                    validationResult.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
 
             var updated = await service.UpdateClientAsync(id, updateDto);
             return updated ? Results.NoContent() : Results.NotFound();

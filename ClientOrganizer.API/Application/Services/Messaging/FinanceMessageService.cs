@@ -1,7 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using ClientOrganizer.API.Models.Dtos;
 
-namespace ClientOrganizer.API.Services.Messaging
+namespace ClientOrganizer.API.Application.Services.Messaging
 {
     public class FinanceMessageService
     {

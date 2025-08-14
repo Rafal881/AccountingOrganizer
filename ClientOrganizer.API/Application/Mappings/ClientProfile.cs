@@ -2,7 +2,7 @@ using AutoMapper;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
 
-namespace ClientOrganizer.API.Mappings;
+namespace ClientOrganizer.API.Application.Mappings;
 
 public class ClientProfile : Profile
 {

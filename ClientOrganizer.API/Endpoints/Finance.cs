@@ -1,5 +1,7 @@
+using ClientOrganizer.API.Application.Services;
 using ClientOrganizer.API.Models.Dtos;
-using ClientOrganizer.API.Services;
+using FluentValidation;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace ClientOrganizer.API.Endpoints;
@@ -36,8 +38,17 @@ public static class Finance
         .WithTags("Finance");
 
         // Create a financial record for a client
-        app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordCreateDto createDto, IFinanceService service) =>
+        app.MapPost("/clients/{clientId}/finance", async (int clientId, FinancialRecordCreateDto createDto, 
+            IFinanceService service, 
+            IValidator<FinancialRecordCreateDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(createDto);
+            if (!validationResult.IsValid)
+                return Results.ValidationProblem(
+                    validationResult.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
+
             var result = await service.CreateAsync(clientId, createDto);
             return result.Error switch
             {
@@ -50,15 +61,16 @@ public static class Finance
         .WithTags("Finance");
 
         // Update a financial record for a client
-        app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordUpdateDto updateDto, IFinanceService service) =>
+        app.MapPut("/clients/{clientId}/finance", async (int clientId, FinancialRecordUpdateDto updateDto, 
+            IFinanceService service, 
+            IValidator < FinancialRecordUpdateDto > validator) =>
         {
-            if (updateDto is null ||
-                updateDto.IncomeTax is null &&
-                updateDto.Vat is null &&
-                updateDto.InsuranceAmount is null)
-            {
-                return Results.BadRequest("At least one property must be provided for update.");
-            }
+            var validationResult = await validator.ValidateAsync(updateDto);
+            if (!validationResult.IsValid)
+                return Results.ValidationProblem(
+                    validationResult.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
 
             var result = await service.UpdateAsync(clientId, updateDto);
             return result.Error == FinanceServiceError.NotFound ? Results.NotFound() : Results.NoContent();
