@@ -4,6 +4,7 @@ using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
 using ClientOrganizer.API.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace ClientOrganizer.API.Services;
 
@@ -12,22 +13,32 @@ public class FinanceService : IFinanceService
     private readonly ClientOrganizerDbContext _dbContext;
     private readonly FinanceMessageService _messageService;
     private readonly IMapper _mapper;
-
-    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService, IMapper mapper)
+    private readonly HybridCache _cache;
+    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService, IMapper mapper, HybridCache cache)
     {
         _dbContext = db;
         _messageService = messageService;
         _mapper = mapper;
+        _cache = cache;
     }
 
     public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId)
     {
-        var records = await _dbContext.FinancialData
-            .Where(f => f.ClientId == clientId)
-            .ToListAsync();
+        var cacheKey = GetCacheKey(clientId);
 
-        return _mapper.Map<IEnumerable<FinancialRecordReadDto>>(records);
+        var records = await _cache.GetOrCreateAsync(cacheKey, async ct =>
+        {
+            var data = await _dbContext.FinancialData
+                .Where(f => f.ClientId == clientId)
+                .AsNoTracking()
+                .ToListAsync(ct);
+            return _mapper.Map<List<FinancialRecordReadDto>>(data);
+        });
+
+        return records;
     }
+
+    private static string GetCacheKey(int clientId) => $"finance_records_client_{clientId}";
 
     public async Task<FinancialRecordReadDto?> GetByIdAsync(int id)
     {
@@ -65,6 +76,8 @@ public class FinanceService : IFinanceService
 
         await _messageService.SendFinancialRecordCreatedAsync(recordDto, client.Email);
 
+        await _cache.RemoveAsync(GetCacheKey(clientId));
+
         return new FinanceServiceResult(FinanceServiceError.None, recordDto);
     }
 
@@ -90,6 +103,8 @@ public class FinanceService : IFinanceService
 
         await _messageService.SendFinancialRecordUpdatedAsync(recordDto, client.Email);
 
+        await _cache.RemoveAsync(GetCacheKey(clientId));
+
         return new FinanceServiceResult(FinanceServiceError.None, recordDto);
     }
 
@@ -100,6 +115,9 @@ public class FinanceService : IFinanceService
 
         _dbContext.FinancialData.Remove(record);
         await _dbContext.SaveChangesAsync();
+
+        await _cache.RemoveAsync(GetCacheKey(record.ClientId));
+
         return true;
     }
 }
