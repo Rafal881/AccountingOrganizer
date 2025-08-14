@@ -9,9 +9,9 @@ public static class Finance
     public static void RegisterFinanceEndpoints(this WebApplication app)
     {
         // Get all financial records for a given client
-        app.MapGet("/clients/{clientId}/finance/all", async (int clientId, IFinanceService service) =>
+        app.MapGet("/clients/{clientId}/finance/all", async (int clientId, IFinanceService service, int page = 1, int pageSize = 10) =>
         {
-            var records = await service.GetAllForClientAsync(clientId);
+            var records = await service.GetAllForClientAsync(clientId, page, pageSize);
             return records.Any() ? Results.Ok(records) : Results.NotFound();
         })
         .WithName("GetAllFinanceRecordsForClient")

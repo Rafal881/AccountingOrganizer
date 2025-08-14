@@ -22,20 +22,24 @@ public class FinanceService : IFinanceService
         _cache = cache;
     }
 
-    public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId)
+    public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId, int page, int pageSize)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
         var cacheKey = GetCacheKey(clientId);
 
         var records = await _cache.GetOrCreateAsync(cacheKey, async ct =>
         {
             var data = await _dbContext.FinancialData
                 .Where(f => f.ClientId == clientId)
+                .OrderBy(f => f.Id)
                 .AsNoTracking()
                 .ToListAsync(ct);
             return _mapper.Map<List<FinancialRecordReadDto>>(data);
         });
 
-        return records;
+        return records.Skip((page - 1) * pageSize).Take(pageSize);
     }
 
     private static string GetCacheKey(int clientId) => $"finance_records_client_{clientId}";
