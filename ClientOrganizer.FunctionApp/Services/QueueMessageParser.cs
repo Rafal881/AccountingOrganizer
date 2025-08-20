@@ -5,52 +5,53 @@ namespace ClientOrganizer.FunctionApp.Services
 {
     public class QueueMessageParser : IQueueMessageParser
     {
-        public bool TryParse(string queueMessage, ILogger log, out string clientEmail, out int month, out int year, out FinanceEventType eventType)
+        public FinanceQueueMessage? Parse(string queueMessage, ILogger log)
         {
-            clientEmail = string.Empty;
-            month = 0;
-            year = 0;
-            eventType = default;
-
             try
             {
                 var msg = System.Text.Json.JsonDocument.Parse(queueMessage).RootElement;
-
                 if (!msg.TryGetProperty("Record", out var record))
                 {
                     log.LogError("Message does not contain 'Record' property.");
-                    return false;
+                    return null;
                 }
 
-                clientEmail = record.TryGetProperty("Email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
+                var clientEmail = record.TryGetProperty("Email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
                 if (string.IsNullOrWhiteSpace(clientEmail))
                 {
                     log.LogError("No email found in message.");
-                    return false;
+                    return null;
                 }
 
-                month = record.TryGetProperty("Month", out var monthProp) ? monthProp.GetInt32() : 0;
-                year = record.TryGetProperty("Year", out var yearProp) ? yearProp.GetInt32() : 0;
+                var month = record.TryGetProperty("Month", out var monthProp) ? monthProp.GetInt32() : 0;
+                var year = record.TryGetProperty("Year", out var yearProp) ? yearProp.GetInt32() : 0;
 
                 var eventTypeString = msg.TryGetProperty("Event", out var eventProp) ? eventProp.GetString() ?? string.Empty : string.Empty;
                 if (string.IsNullOrWhiteSpace(eventTypeString))
                 {
                     log.LogWarning("No 'Event' property found in message.");
-                    return false;
+                    return null;
                 }
 
-                if (!Enum.TryParse(eventTypeString, out eventType))
+                if (!Enum.TryParse(eventTypeString, out FinanceEventType eventType))
                 {
                     log.LogWarning("Unknown event type: {EventType}", eventTypeString);
-                    return false;
+                    return null;
                 }
 
-                return true;
+                return new FinanceQueueMessage
+                {
+                    Email = clientEmail,
+                    Month = month,
+                    Year = year,
+                    EventType = eventType
+                };
+
             }
             catch (Exception ex)
             {
                 log.LogError(ex, "Failed to parse queue message.");
-                return false;
+                return null;
             }
         }
     }

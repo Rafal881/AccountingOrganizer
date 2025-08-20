@@ -1,8 +1,6 @@
 using ClientOrganizer.API.Application.Services;
 using ClientOrganizer.API.Models.Dtos;
 using FluentValidation;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace ClientOrganizer.API.Endpoints;
 
@@ -44,8 +42,7 @@ public static class Finance
         {
             var validationResult = await validator.ValidateAsync(createDto);
             if (!validationResult.IsValid)
-                return Results.ValidationProblem(
-                    validationResult.Errors
+                return Results.ValidationProblem(validationResult.Errors
                         .GroupBy(e => e.PropertyName)
                         .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
 
@@ -54,6 +51,7 @@ public static class Finance
             {
                 FinanceServiceError.Conflict => Results.Conflict($"Financial record for client {clientId} in {createDto.Month}/{createDto.Year} already exists."),
                 FinanceServiceError.NotFound => Results.NotFound($"Client with id {clientId} not found."),
+                FinanceServiceError.ServiceBusError => Results.Problem("Failed to send message to service bus."),
                 _ => Results.Created($"/finance/{result.Record!.Id}", result.Record)
             };
         })
@@ -67,13 +65,18 @@ public static class Finance
         {
             var validationResult = await validator.ValidateAsync(updateDto);
             if (!validationResult.IsValid)
-                return Results.ValidationProblem(
-                    validationResult.Errors
+                return Results.ValidationProblem(validationResult.Errors
                         .GroupBy(e => e.PropertyName)
                         .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray()));
 
             var result = await service.UpdateAsync(clientId, updateDto);
-            return result.Error == FinanceServiceError.NotFound ? Results.NotFound() : Results.NoContent();
+
+            return result.Error switch
+            {
+                FinanceServiceError.NotFound => Results.NotFound(),
+                FinanceServiceError.ServiceBusError => Results.Problem("Failed to send message to service bus."),
+                _ => Results.NoContent()
+            };
         })
         .WithName("UpdateClientFinanceRecord")
         .WithTags("Finance");

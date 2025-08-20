@@ -11,46 +11,62 @@ namespace ClientOrganizer.API.Application.Services.Messaging
             _sender = sender;
         }
 
-        public async Task SendFinancialRecordCreatedAsync(FinancialRecordReadDto dto, string email)
+        public async Task<bool> SendFinancialRecordCreatedAsync(FinancialRecordReadDto dto, string email)
         {
-            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
+            try
             {
-                Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
-                Record = new
+            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    dto.Id,
-                    dto.ClientId,
-                    dto.Month,
-                    dto.Year,
-                    dto.IncomeTax,
-                    dto.Vat,
-                    dto.InsuranceAmount,
-                    Email = email
-                }
-            });
-            var message = new ServiceBusMessage(messageBody);
-            await _sender.SendMessageAsync(message);
+                    Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
+                    Record = new
+                    {
+                        dto.Id,
+                        dto.ClientId,
+                        dto.Month,
+                        dto.Year,
+                        dto.IncomeTax,
+                        dto.Vat,
+                        dto.InsuranceAmount,
+                        Email = email
+                    }
+                });
+                var message = new ServiceBusMessage(messageBody);
+                await _sender.SendMessageAsync(message);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
+        public async Task<bool> SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
         {
-            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
+            try
             {
-                Event = FinanceEventType.FinancialRecordUpdated.ToString(),
-                Record = new
+                var messageBody = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    dto.Id,
-                    dto.ClientId,
-                    dto.Month,
-                    dto.Year,
-                    dto.IncomeTax,
-                    dto.Vat,
-                    dto.InsuranceAmount,
-                    Email = email
-                }
-            });
-            var message = new ServiceBusMessage(messageBody);
-            await _sender.SendMessageAsync(message);
+                    Event = FinanceEventType.FinancialRecordUpdated.ToString(),
+                    Record = new
+                    {
+                        dto.Id,
+                        dto.ClientId,
+                        dto.Month,
+                        dto.Year,
+                        dto.IncomeTax,
+                        dto.Vat,
+                        dto.InsuranceAmount,
+                        Email = email
+                    }
+                });
+                var message = new ServiceBusMessage(messageBody);
+                await _sender.SendMessageAsync(message);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

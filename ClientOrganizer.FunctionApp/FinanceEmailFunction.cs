@@ -41,14 +41,16 @@ namespace ClientOrganizer.FunctionApp
         {
             var log = context.GetLogger("FinanceEmailFunction");
 
-            if (!_messageParser.TryParse(queueMessage, log, out var clientEmail, out var month, out var year, out var eventType))
+            var parsedMessage = _messageParser.Parse(queueMessage, log);
+            if (parsedMessage is null)
                 return;
 
-            var emailContent = _contentProvider.GetContent(eventType, month, year, log);
+            var emailContent = _contentProvider.GetContent(parsedMessage.EventType, parsedMessage.Month, parsedMessage.Year, log);
+
             if (emailContent == null || string.IsNullOrEmpty(emailContent.Subject) || string.IsNullOrEmpty(emailContent.Body))
                 return;
 
-            var mail = _messageFactory.Create(_fromEmail, clientEmail, emailContent);
+            var mail = _messageFactory.Create(_fromEmail, parsedMessage.Email, emailContent);
 
             var response = await _sendGridClient.SendEmailAsync(mail);
             var responseBody = await response.Body.ReadAsStringAsync();
@@ -57,7 +59,7 @@ namespace ClientOrganizer.FunctionApp
             {
                 log.LogError("SendGrid failed. StatusCode: {StatusCode}, Response: {ResponseBody}", response.StatusCode, responseBody);
             }
-            log.LogInformation("Email sent to {Email} with status {Status}", clientEmail, response.StatusCode);
+            log.LogInformation("Email sent to {Email} with status {Status}", parsedMessage.Email, response.StatusCode);
         }
     }
 }
