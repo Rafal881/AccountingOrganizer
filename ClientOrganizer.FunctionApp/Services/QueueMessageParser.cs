@@ -7,11 +7,6 @@ namespace ClientOrganizer.FunctionApp.Services
     {
         public FinanceQueueMessage? Parse(string queueMessage, ILogger log)
         {
-            clientEmail = string.Empty;
-            month = 0;
-            year = 0;
-            eventType = default;
-
             try
             {
                 var msg = System.Text.Json.JsonDocument.Parse(queueMessage).RootElement;
