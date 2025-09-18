@@ -16,24 +16,24 @@ namespace ClientOrganizer.API.Application.Services.Messaging
             try
             {
             var messageBody = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
+                Record = new
                 {
-                    Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
-                    Record = new
-                    {
-                        dto.Id,
-                        dto.ClientId,
-                        dto.Month,
-                        dto.Year,
-                        dto.IncomeTax,
-                        dto.Vat,
-                        dto.InsuranceAmount,
-                        Email = email
-                    }
-                });
-                var message = new ServiceBusMessage(messageBody);
-                await _sender.SendMessageAsync(message);
+                    dto.Id,
+                    dto.ClientId,
+                    dto.Month,
+                    dto.Year,
+                    dto.IncomeTax,
+                    dto.Vat,
+                    dto.InsuranceAmount,
+                    Email = email
+                }
+            });
+            var message = new ServiceBusMessage(messageBody);
+            await _sender.SendMessageAsync(message);
                 return true;
-            }
+        }
             catch
             {
                 return false;
@@ -43,24 +43,24 @@ namespace ClientOrganizer.API.Application.Services.Messaging
         public async Task<bool> SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
         {
             try
+        {
+            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
             {
-                var messageBody = System.Text.Json.JsonSerializer.Serialize(new
+                Event = FinanceEventType.FinancialRecordUpdated.ToString(),
+                Record = new
                 {
-                    Event = FinanceEventType.FinancialRecordUpdated.ToString(),
-                    Record = new
-                    {
-                        dto.Id,
-                        dto.ClientId,
-                        dto.Month,
-                        dto.Year,
-                        dto.IncomeTax,
-                        dto.Vat,
-                        dto.InsuranceAmount,
-                        Email = email
-                    }
-                });
-                var message = new ServiceBusMessage(messageBody);
-                await _sender.SendMessageAsync(message);
+                    dto.Id,
+                    dto.ClientId,
+                    dto.Month,
+                    dto.Year,
+                    dto.IncomeTax,
+                    dto.Vat,
+                    dto.InsuranceAmount,
+                    Email = email
+                }
+            });
+            var message = new ServiceBusMessage(messageBody);
+            await _sender.SendMessageAsync(message);
                 return true;
             }
             catch

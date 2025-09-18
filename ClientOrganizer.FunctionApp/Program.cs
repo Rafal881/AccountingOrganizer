@@ -9,6 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SendGrid;
+using ClientOrganizer.FunctionApp;
+using ClientOrganizer.FunctionApp.Services;
+using ClientOrganizer.FunctionApp.Configuration;
+using Microsoft.Extensions.Options;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
