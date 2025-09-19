@@ -14,12 +14,14 @@ public class FinanceService : IFinanceService
     private readonly FinanceMessageService _messageService;
     private readonly IMapper _mapper;
     private readonly HybridCache _cache;
-    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService, IMapper mapper, HybridCache cache)
+    private readonly IUnitOfWork _unitOfWork;
+    public FinanceService(ClientOrganizerDbContext db, FinanceMessageService messageService, IMapper mapper, HybridCache cache, IUnitOfWork unitOfWork)
     {
         _dbContext = db;
         _messageService = messageService;
         _mapper = mapper;
         _cache = cache;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<IEnumerable<FinancialRecordReadDto>> GetAllForClientAsync(int clientId, int page, int pageSize)
@@ -76,10 +78,10 @@ public class FinanceService : IFinanceService
         record.ClientId = clientId;
         record.Client = client;
 
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        using var transaction = await _unitOfWork.BeginTransactionAsync();
 
         _dbContext.FinancialData.Add(record);
-        await _dbContext.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
 
@@ -115,9 +117,9 @@ public class FinanceService : IFinanceService
 
         _mapper.Map(updateDto, record);
 
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-        await _dbContext.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
 
@@ -141,7 +143,7 @@ public class FinanceService : IFinanceService
         if (record is null) return false;
 
         _dbContext.FinancialData.Remove(record);
-        await _dbContext.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         await _cache.RemoveAsync(GetCacheKey(record.ClientId));
 

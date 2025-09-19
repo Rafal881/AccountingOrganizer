@@ -68,6 +68,7 @@ namespace ClientOrganizer.API.Configuration
 
             builder.Services.AddDbContext<ClientOrganizerDbContext>(options =>
                 options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             var serviceBusConnectionString = builder.Configuration["serviceBusConnectionString"]
                 ?? throw new InvalidOperationException("Service Bus connection string not configured.");
