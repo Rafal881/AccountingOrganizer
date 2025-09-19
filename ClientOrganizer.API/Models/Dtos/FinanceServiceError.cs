@@ -4,5 +4,6 @@ public enum FinanceServiceError
 {
     None,
     Conflict,
-    NotFound
+    NotFound,
+    ServiceBusError
 }

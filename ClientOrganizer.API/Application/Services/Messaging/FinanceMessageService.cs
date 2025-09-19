@@ -11,8 +11,10 @@ namespace ClientOrganizer.API.Application.Services.Messaging
             _sender = sender;
         }
 
-        public async Task SendFinancialRecordCreatedAsync(FinancialRecordReadDto dto, string email)
+        public async Task<bool> SendFinancialRecordCreatedAsync(FinancialRecordReadDto dto, string email)
         {
+            try
+            {
             var messageBody = System.Text.Json.JsonSerializer.Serialize(new
             {
                 Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
@@ -30,9 +32,17 @@ namespace ClientOrganizer.API.Application.Services.Messaging
             });
             var message = new ServiceBusMessage(messageBody);
             await _sender.SendMessageAsync(message);
+                return true;
+        }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
+        public async Task<bool> SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
+        {
+            try
         {
             var messageBody = System.Text.Json.JsonSerializer.Serialize(new
             {
@@ -51,6 +61,12 @@ namespace ClientOrganizer.API.Application.Services.Messaging
             });
             var message = new ServiceBusMessage(messageBody);
             await _sender.SendMessageAsync(message);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

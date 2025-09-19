@@ -3,19 +3,20 @@ using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
 using ClientOrganizer.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace ClientOrganizer.API.Application.Services;
 
 public class ClientService : IClientService
 {
     private readonly ClientOrganizerDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public ClientService(ClientOrganizerDbContext db, IMapper mapper)
+    public ClientService(ClientOrganizerDbContext db, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _dbContext = db;
-        _mapper = mapper;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;        
     }
 
     public async Task<IEnumerable<ClientReadDto>> GetClientsAsync(int page, int pageSize)
@@ -46,8 +47,7 @@ public class ClientService : IClientService
         if (exists) return null;
 
         var client = _mapper.Map<Client>(createDto);
-        _dbContext.Clients.Add(client);
-        await _dbContext.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return _mapper.Map<ClientReadDto>(client);
     }
 
@@ -57,7 +57,7 @@ public class ClientService : IClientService
         if (client is null) return false;
 
         _mapper.Map(updateDto, client);
-        await _dbContext.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 

@@ -54,7 +54,7 @@ namespace ClientOrganizer.API.Configuration
             });
 
             // EF Core DbContext
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var connectionString = builder.Configuration["DefaultConnection"];
             var sqlPassword = Environment.GetEnvironmentVariable("sqlPassword");
 
             if (!string.IsNullOrWhiteSpace(sqlPassword))
@@ -68,17 +68,16 @@ namespace ClientOrganizer.API.Configuration
 
             builder.Services.AddDbContext<ClientOrganizerDbContext>(options =>
                 options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            var serviceBusConnectionString = builder.Configuration["serviceBusConnectionString"]
+                ?? throw new InvalidOperationException("Service Bus connection string not configured.");
 
             // Bus client and bus sender
             builder.Services.AddOptions<ServiceBusOptions>()
-                .Bind(builder.Configuration.GetSection("ServiceBus"))
-                .PostConfigure(options =>
+                .Configure(options =>
                 {
-                    var serviceBusConnectionString = Environment.GetEnvironmentVariable("serviceBusConnectionString");
-                    if (string.IsNullOrWhiteSpace(serviceBusConnectionString))
-                    {
-                        throw new InvalidOperationException("Service Bus connection string not found in environment variables.");
-                    }
+                    builder.Configuration.GetSection("ServiceBus").Bind(options);
                     options.ConnectionString = serviceBusConnectionString;
                 })
                 .ValidateDataAnnotations()
