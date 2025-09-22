@@ -1,23 +1,22 @@
-using Azure.Messaging.ServiceBus;
+using System.Text.Json;
 using ClientOrganizer.API.Models.Dtos;
+using ClientOrganizer.API.Models.Entities;
 
 namespace ClientOrganizer.API.Application.Services.Messaging
 {
     public class FinanceMessageService
     {
-        private readonly ServiceBusSender _sender;
-        public FinanceMessageService(ServiceBusSender sender)
-        {
-            _sender = sender;
-        }
+        public OutboxMessage CreateFinancialRecordCreatedMessage(FinancialRecordReadDto dto, string email)
+            => CreateMessage(FinanceEventType.NewFinancialRecordCreated, dto, email);
 
-        public async Task<bool> SendFinancialRecordCreatedAsync(FinancialRecordReadDto dto, string email)
+        public OutboxMessage CreateFinancialRecordUpdatedMessage(FinancialRecordReadDto dto, string email)
+            => CreateMessage(FinanceEventType.FinancialRecordUpdated, dto, email);
+
+        private static OutboxMessage CreateMessage(FinanceEventType eventType, FinancialRecordReadDto dto, string email)
         {
-            try
+            var payload = JsonSerializer.Serialize(new
             {
-            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                Event = FinanceEventType.NewFinancialRecordCreated.ToString(),
+                Event = eventType.ToString(),
                 Record = new
                 {
                     dto.Id,
@@ -30,43 +29,8 @@ namespace ClientOrganizer.API.Application.Services.Messaging
                     Email = email
                 }
             });
-            var message = new ServiceBusMessage(messageBody);
-            await _sender.SendMessageAsync(message);
-                return true;
-        }
-            catch
-            {
-                return false;
-            }
-        }
 
-        public async Task<bool> SendFinancialRecordUpdatedAsync(FinancialRecordReadDto dto, string email)
-        {
-            try
-        {
-            var messageBody = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                Event = FinanceEventType.FinancialRecordUpdated.ToString(),
-                Record = new
-                {
-                    dto.Id,
-                    dto.ClientId,
-                    dto.Month,
-                    dto.Year,
-                    dto.IncomeTax,
-                    dto.Vat,
-                    dto.InsuranceAmount,
-                    Email = email
-                }
-            });
-            var message = new ServiceBusMessage(messageBody);
-            await _sender.SendMessageAsync(message);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return OutboxMessage.Create(eventType.ToString(), payload);
         }
     }
 }

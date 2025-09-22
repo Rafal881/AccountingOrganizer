@@ -84,14 +84,10 @@ public class FinanceService : IFinanceService
         await _unitOfWork.SaveChangesAsync();
 
         var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
+        var outboxMessage = _messageService.CreateFinancialRecordCreatedMessage(recordDto, client.Email);
+        _dbContext.OutboxMessages.Add(outboxMessage);
 
-        if (!await _messageService.SendFinancialRecordCreatedAsync(recordDto, client.Email))
-        {
-            await transaction.RollbackAsync();
-            _dbContext.Entry(record).State = EntityState.Detached;
-            return new FinanceServiceResult(FinanceServiceError.ServiceBusError, null);
-        }
-
+        await _unitOfWork.SaveChangesAsync();
         await transaction.CommitAsync();
 
         await _cache.RemoveAsync(GetCacheKey(clientId));
@@ -122,14 +118,10 @@ public class FinanceService : IFinanceService
         await _unitOfWork.SaveChangesAsync();
 
         var recordDto = _mapper.Map<FinancialRecordReadDto>(record);
+        var outboxMessage = _messageService.CreateFinancialRecordUpdatedMessage(recordDto, client.Email);
+        _dbContext.OutboxMessages.Add(outboxMessage);
 
-        if (!await _messageService.SendFinancialRecordUpdatedAsync(recordDto, client.Email))
-        {
-            await transaction.RollbackAsync();
-            await _dbContext.Entry(record).ReloadAsync();
-            return new FinanceServiceResult(FinanceServiceError.ServiceBusError, null);
-        }
-
+        await _unitOfWork.SaveChangesAsync();
         await transaction.CommitAsync();
 
         await _cache.RemoveAsync(GetCacheKey(clientId));
