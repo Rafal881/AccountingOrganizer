@@ -12,6 +12,7 @@ namespace ClientOrganizer.API.Data
 
         public DbSet<Client> Clients => Set<Client>();
         public DbSet<FinancialData> FinancialData => Set<FinancialData>();
+        public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

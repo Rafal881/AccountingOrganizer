@@ -3,6 +3,7 @@ using Azure.Messaging.ServiceBus;
 using ClientOrganizer.API.Application.Mappings;
 using ClientOrganizer.API.Application.Services;
 using ClientOrganizer.API.Application.Services.Messaging;
+using ClientOrganizer.API.Application.Services.Outbox;
 using ClientOrganizer.API.Application.Validators;
 using ClientOrganizer.API.Data;
 using ClientOrganizer.API.Models.Dtos;
@@ -97,6 +98,7 @@ namespace ClientOrganizer.API.Configuration
             });
 
             builder.Services.AddScoped<FinanceMessageService>();
+            builder.Services.AddHostedService<OutboxProcessor>();
         }
 
         public static void RegisterMiddlewares(this WebApplication app)
